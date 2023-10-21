@@ -1,28 +1,25 @@
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use axum::{response::IntoResponse, routing::get, Json, Router};
 
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
+pub async fn health_checker_handler() -> impl IntoResponse {
+    const MESSAGE: &str = "JWT Authentication in Rust using Axum, Postgres, and SQLX";
+
+    let json_response = serde_json::json!({
+        "status": "success",
+        "message": MESSAGE
+    });
+
+    Json(json_response)
 }
 
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
+#[tokio::main]
+async fn main() {
+    let app = Router::new().route("/api/healthchecker", get(health_checker_handler));
+
+    println!("🚀 Server started successfully");
+    axum::Server::bind(&"0.0.0.0:8000".parse().unwrap())
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
 }
 
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
-}
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
-        App::new()
-            .service(hello)
-            .service(echo)
-            .route("/hey", web::get().to(manual_hello))
-    })
-    .bind(("127.0.0.1", 8080))?
-    .run()
-    .await
-}
